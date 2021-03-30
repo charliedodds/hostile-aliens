@@ -10,37 +10,23 @@
 				margin: 0;
 				padding: 0;
 				box-sizing: border-box;
-			}
-
-			body {
 				text-align: center;
 				font: bold 36px Helvetica;
 			}
-
 			main {
 				display: flex;
 				flex-wrap: wrap;
 			}
-
 			.ship {
-				height: 100px;
-				width: 100px;
-				color: white;
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				border: 5px solid white;
+				border: 5px solid black;
 			}
 			.mother-ship {
-				background-color: red;
 				width: 100%;
 			}
 			.defense-ship {
-				background-color: blue;
 				width: 20%;
 			}
 			.attack-ship {
-				background-color: green;
 				width: calc(100% / 8);
 			}
 		</style>
@@ -51,139 +37,116 @@
 		<button id="shootBtn">SHOOT</button>
 		<button id="resetBtn">RESTART</button>
 		<script>
-			class Ship {
-				constructor(HP, weakness) {
+			const main = document.querySelector('main');
+			class Ships {
+				constructor() {
+					this.ships = [];
+				}
+				createShipObjects() {
+					this.ships = [];
+					for (let i = 0; i < 14; i++) {
+						if (i < 1) {
+							this.ships.push(new Ships.Ship(100, 9, 'mother', i));
+						} else if (i < 6) {
+							this.ships.push(new Ships.Ship(80, 10, 'defense', i));
+						} else {
+							this.ships.push(new Ships.Ship(45, 12, 'attack', i));
+						}
+					}
+				}
+				getRandomShip() {
+					let chosenShip = this.ships[Math.floor(Math.random() * this.ships.length)];
+					if (chosenShip.HP <= 0) {
+						chosenShip = this.getRandomShip();
+					}
+					return chosenShip;
+				}
+				resetShips() {
+					this.ships.forEach((ship) => {
+						switch (ship.type) {
+							case 'mother':
+								ship.HP = 100;
+								break;
+							case 'defense':
+								ship.HP = 80;
+								break;
+							case 'attack':
+								ship.HP = 45;
+								break;
+						}
+						screenObj.updateHealth(ship);
+					});
+				}
+			}
+			Ships.Ship = class {
+				constructor(HP, weakness, type, id) {
 					this.HP = HP;
 					this.weakness = weakness;
+					this.type = type;
+					this.id = id;
+					if (type === 'mother') {
+						this.destroyAllShips = function () {
+							shipsObj.ships.forEach((ship) => {
+								ship.HP = 0;
+								screenObj.updateHealth(ship);
+							});
+						};
+					}
 				}
 				takeDamage() {
 					this.HP -= this.weakness;
 				}
-			}
-
-			class MotherShip extends Ship {
-				constructor(HP, weakness) {
-					super(HP, weakness);
-					this.type = 'mother';
+			};
+			class Game {
+				checkGameOver() {
+					return shipsObj.ships.every((alien) => alien.HP <= 0);
 				}
-				destroyAllShips() {
-					allShips.forEach((ship) => {
-						ship.HP = 0;
-						updateHealth(ship);
+				handleGameOver() {
+					console.log('game over');
+					shootBtn.disabled = true;
+				}
+				shoot() {
+					const ship = shipsObj.getRandomShip();
+					ship.takeDamage();
+					screenObj.updateHealth(ship);
+					if (ship.HP <= 0 && ship.destroyAllShips) {
+						ship.destroyAllShips();
+					}
+					if (gameObj.checkGameOver()) {
+						gameObj.handleGameOver();
+					}
+				}
+				resetGame() {
+					shootBtn.disabled = false;
+					shipsObj.resetShips();
+				}
+			}
+			class ScreenChanger {
+				updateHealth(ship) {
+					document.querySelector(`#ship${ship.id}`).querySelector('p').innerText = ship.HP <= 0 ? 0 : ship.HP;
+				}
+				createShipElements() {
+					shipsObj.ships.forEach((ship) => {
+						const shipDiv = document.createElement('div');
+						shipDiv.id = `ship${ship.id}`;
+						shipDiv.classList.add('ship', `${ship.type}-ship`);
+						const shipHealth = document.createElement('p');
+						shipHealth.classList.add('health');
+						shipHealth.innerText = ship.HP;
+						shipDiv.append(shipHealth);
+						main.append(shipDiv);
 					});
 				}
 			}
-
-			class DefenseShip extends Ship {
-				constructor(HP, weakness) {
-					super(HP, weakness);
-					this.type = 'defense';
-				}
-			}
-
-			class AttackShip extends Ship {
-				constructor(HP, weakness) {
-					super(HP, weakness);
-					this.type = 'attack';
-				}
-			}
-
-			const motherShip = new MotherShip(100, 9);
-			const defenseShips = [];
-			const attackShips = [];
-
-			for (let i = 0; i < 5; i++) {
-				const defenseShip = new DefenseShip(80, 10);
-				defenseShips.push(defenseShip);
-			}
-
-			for (let i = 0; i < 8; i++) {
-				const attackShip = new AttackShip(45, 12);
-				attackShips.push(attackShip);
-			}
-
-			const allShips = [motherShip, ...defenseShips, ...attackShips].map((ship, id) => {
-				ship.id = id;
-				return ship;
-			});
-
-			console.log(allShips);
-
-			const getRandomShip = () => {
-				let chosenShip = allShips[Math.floor(Math.random() * allShips.length)];
-				if (chosenShip.HP <= 0) {
-					chosenShip = getRandomShip();
-				}
-				return chosenShip;
-			};
-
-			const checkGameOver = () => allShips.every((alien) => alien.HP <= 0);
-
-			const handleGameOver = () => {
-				console.log('game over');
-				shootBtn.disabled = true;
-			};
-
-			const updateHealth = (ship) => {
-				document.querySelector(`#ship${ship.id}`).querySelector('p').innerText = ship.HP <= 0 ? 0 : ship.HP;
-			};
-
-			const shoot = () => {
-				const ship = getRandomShip();
-				console.log(ship);
-				ship.takeDamage();
-				updateHealth(ship);
-				if (ship.HP <= 0 && ship.destroyAllShips) {
-					ship.destroyAllShips();
-				}
-				if (checkGameOver()) {
-					handleGameOver();
-				}
-			};
-
-			const main = document.querySelector('main');
-
-			const createShips = () => {
-				allShips.forEach((ship) => {
-					const shipDiv = document.createElement('div');
-					shipDiv.id = `ship${ship.id}`;
-					shipDiv.classList.add('ship', `${ship.type}-ship`);
-					const shipHealth = document.createElement('p');
-					shipHealth.classList.add('health');
-					shipHealth.innerText = ship.HP;
-					shipDiv.append(shipHealth);
-					main.append(shipDiv);
-				});
-			};
-
-			createShips();
-
-			const resetShips = () => {
-				allShips.forEach((ship) => {
-					switch (ship.type) {
-						case 'mother':
-							ship.HP = 100;
-							break;
-						case 'defense':
-							ship.HP = 80;
-							break;
-						case 'attack':
-							ship.HP = 45;
-							break;
-					}
-					updateHealth(ship);
-				});
-			};
-
-			const resetGame = () => {
-				shootBtn.disabled = false;
-				resetShips();
-			};
-
+			const shipsObj = new Ships();
+			shipsObj.createShipObjects();
+			const gameObj = new Game();
+			const screenObj = new ScreenChanger();
+			screenObj.createShipElements();
 			const shootBtn = document.querySelector('#shootBtn');
-			shootBtn.addEventListener('click', shoot);
+			shootBtn.addEventListener('click', gameObj.shoot);
 			const resetBtn = document.querySelector('#resetBtn');
-			resetBtn.addEventListener('click', resetGame);
+			resetBtn.addEventListener('click', gameObj.resetGame);
 		</script>
 	</body>
 </html>
