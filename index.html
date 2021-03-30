@@ -5,8 +5,185 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Hostile Aliens</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				text-align: center;
+				font: bold 36px Helvetica;
+			}
+
+			main {
+				display: flex;
+				flex-wrap: wrap;
+			}
+
+			.ship {
+				height: 100px;
+				width: 100px;
+				color: white;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				border: 5px solid white;
+			}
+			.mother-ship {
+				background-color: red;
+				width: 100%;
+			}
+			.defense-ship {
+				background-color: blue;
+				width: 20%;
+			}
+			.attack-ship {
+				background-color: green;
+				width: calc(100% / 8);
+			}
+		</style>
 	</head>
 	<body>
-		<script></script>
+		<h1>Hostile Aliens</h1>
+		<main></main>
+		<button id="shootBtn">SHOOT</button>
+		<button id="resetBtn">RESTART</button>
+		<script>
+			class Ship {
+				constructor(HP, weakness) {
+					this.HP = HP;
+					this.weakness = weakness;
+				}
+				takeDamage() {
+					this.HP -= this.weakness;
+				}
+			}
+
+			class MotherShip extends Ship {
+				constructor(HP, weakness) {
+					super(HP, weakness);
+					this.type = 'mother';
+				}
+				destroyAllShips() {
+					allShips.forEach((ship) => {
+						ship.HP = 0;
+						updateHealth(ship);
+					});
+				}
+			}
+
+			class DefenseShip extends Ship {
+				constructor(HP, weakness) {
+					super(HP, weakness);
+					this.type = 'defense';
+				}
+			}
+
+			class AttackShip extends Ship {
+				constructor(HP, weakness) {
+					super(HP, weakness);
+					this.type = 'attack';
+				}
+			}
+
+			const motherShip = new MotherShip(100, 9);
+			const defenseShips = [];
+			const attackShips = [];
+
+			for (let i = 0; i < 5; i++) {
+				const defenseShip = new DefenseShip(80, 10);
+				defenseShips.push(defenseShip);
+			}
+
+			for (let i = 0; i < 8; i++) {
+				const attackShip = new AttackShip(45, 12);
+				attackShips.push(attackShip);
+			}
+
+			const allShips = [motherShip, ...defenseShips, ...attackShips].map((ship, id) => {
+				ship.id = id;
+				return ship;
+			});
+
+			console.log(allShips);
+
+			const getRandomShip = () => {
+				let chosenShip = allShips[Math.floor(Math.random() * allShips.length)];
+				if (chosenShip.HP <= 0) {
+					chosenShip = getRandomShip();
+				}
+				return chosenShip;
+			};
+
+			const checkGameOver = () => allShips.every((alien) => alien.HP <= 0);
+
+			const handleGameOver = () => {
+				console.log('game over');
+				shootBtn.disabled = true;
+			};
+
+			const updateHealth = (ship) => {
+				document.querySelector(`#ship${ship.id}`).querySelector('p').innerText = ship.HP <= 0 ? 0 : ship.HP;
+			};
+
+			const shoot = () => {
+				const ship = getRandomShip();
+				console.log(ship);
+				ship.takeDamage();
+				updateHealth(ship);
+				if (ship.HP <= 0 && ship.destroyAllShips) {
+					ship.destroyAllShips();
+				}
+				if (checkGameOver()) {
+					handleGameOver();
+				}
+			};
+
+			const main = document.querySelector('main');
+
+			const createShips = () => {
+				allShips.forEach((ship) => {
+					const shipDiv = document.createElement('div');
+					shipDiv.id = `ship${ship.id}`;
+					shipDiv.classList.add('ship', `${ship.type}-ship`);
+					const shipHealth = document.createElement('p');
+					shipHealth.classList.add('health');
+					shipHealth.innerText = ship.HP;
+					shipDiv.append(shipHealth);
+					main.append(shipDiv);
+				});
+			};
+
+			createShips();
+
+			const resetShips = () => {
+				allShips.forEach((ship) => {
+					switch (ship.type) {
+						case 'mother':
+							ship.HP = 100;
+							break;
+						case 'defense':
+							ship.HP = 80;
+							break;
+						case 'attack':
+							ship.HP = 45;
+							break;
+					}
+					updateHealth(ship);
+				});
+			};
+
+			const resetGame = () => {
+				shootBtn.disabled = false;
+				resetShips();
+			};
+
+			const shootBtn = document.querySelector('#shootBtn');
+			shootBtn.addEventListener('click', shoot);
+			const resetBtn = document.querySelector('#resetBtn');
+			resetBtn.addEventListener('click', resetGame);
+		</script>
 	</body>
 </html>
