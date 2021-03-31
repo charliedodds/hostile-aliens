@@ -18,7 +18,7 @@
 				height: 100%;
 			}
 			main {
-				margin: 1rem;
+				margin: 1rem 1rem 0;
 			}
 			.ship {
 				border: 5px solid black;
@@ -39,11 +39,15 @@
 				background: url('https://cdn.pixabay.com/photo/2018/12/16/22/47/ufo-3879499__340.jpg') center no-repeat;
 				background-size: cover;
 			}
+			.hidden {
+				display: none;
+			}
 		</style>
 	</head>
 	<body>
 		<h1>Hostile Aliens</h1>
 		<main></main>
+		<p class="hidden" id="winMsg">You saved our planet!</p>
 		<button id="shootBtn">SHOOT</button>
 		<button id="resetBtn">RESTART</button>
 		<script>
@@ -93,7 +97,10 @@
 			};
 			class Game {
 				checkGameOver = () => shipsObj.ships.every((alien) => alien.HP <= 0);
-				handleGameOver = () => (shootBtn.disabled = true);
+				handleGameOver = () => {
+					shootBtn.disabled = true;
+					winMsg.style.display = 'block';
+				};
 				shoot() {
 					const ship = shipsObj.getRandomShip();
 					ship.takeDamage();
@@ -108,6 +115,7 @@
 				resetGame() {
 					shootBtn.disabled = false;
 					shipsObj.resetShips();
+					winMsg.style.display = 'none';
 				}
 			}
 			class ScreenChanger {
@@ -135,6 +143,7 @@
 			shootBtn.addEventListener('click', gameObj.shoot);
 			const resetBtn = document.querySelector('#resetBtn');
 			resetBtn.addEventListener('click', gameObj.resetGame);
+			const winMsg = document.querySelector('#winMsg');
 		</script>
 	</body>
 </html>
